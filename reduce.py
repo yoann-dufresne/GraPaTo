@@ -3,14 +3,20 @@ import argparse
 
 
 
-def parse_annotations(annotations_file):
+def parse_annotations(annotations_file, haslen=False):
     annotations = {}
 
     with open(annotations_file, 'r') as af:
         af.readline()
         for line in af:
             sp = line.strip().split('\t')
-            annotations[sp[0]] = sp[1]
+            if haslen==True: # the second element in the tsv is the length of the node. So for now we don't want it
+                if len(sp)>2:
+                    annotations[sp[0]] = sp[2]
+                else:
+                    annotations[sp[0]] = ['']
+            else:
+                annotations[sp[0]] = sp[1:]
             
     return annotations
 
@@ -49,7 +55,9 @@ def parse_graph(edges_file, verbose=False):
 
         print("Graph arities")
         print(arities[0], arities[1], arities[2], arities[3])
-
+    #me
+    #print(graph.get(1))
+    #print(graph.get('1'))
     return graph
 
 
@@ -81,7 +89,7 @@ def compact(idx, nodes, graph, annotations):
         # Modify the annotations
         del annotations[node]
         del graph[node]
-
+    
     return new_node
 
 
@@ -159,12 +167,16 @@ if __name__ == "__main__":
     parser.add_argument('--annotations', '-a', type=str, dest='annotations_file', required=True, help='Annotation file [tsv]')
     parser.add_argument('--outprefix', '-o', type=str, dest='outprefix', required=True, help='Prefix for all the output files.')
 
+
     args = parser.parse_args()
     print(args)
 
-    annotations = parse_annotations(args.annotations_file)
+    annotations = parse_annotations(args.annotations_file,haslen=True)
     graph = parse_graph(args.graph_file, verbose=True)
     print(len(annotations), len(graph))
+
+    #print(annotations.get('1'))
+    #print(annotations.get(1))
 
     compact_index = f"{args.outprefix}_compact_index.tsv"
     reduced_graph, reduced_annotations = reduce(annotations, graph, compact_index)
@@ -175,4 +187,5 @@ if __name__ == "__main__":
 
     # Output the reduced graph
     graph_file = f"{args.outprefix}_edges.tsv"
+    print(len(graph))
     save_graph(reduced_graph, graph_file)
