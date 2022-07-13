@@ -1,4 +1,5 @@
 import argparse
+from collections import deque
 
 def parse_graph(gfaFile, verbose=False):
     graph = {}
@@ -38,9 +39,15 @@ def remove_snp(starting_node,graph,nodes_length,snp_len=1,max_parallel_nodes=3,v
     removed_num=0
 
     while len(stack)>0:
-
-        current_node = stack.pop()
-        #print(f'visiting {current_node}')
+        idx=0
+        neighb_nobs=100
+        for node in stack:
+            for neighbor in graph[node]:
+                if len(graph[neighbor])<neighb_nobs:
+                    neighb_nobs=len(graph[neighbor])
+                    idx=stack.index(node)
+        current_node = stack.pop(idx)
+        print(f'visiting {current_node}')
 
         if to_remove.get(current_node) != None:
             for neighbor in graph[current_node]:
@@ -66,13 +73,17 @@ def remove_snp(starting_node,graph,nodes_length,snp_len=1,max_parallel_nodes=3,v
                     for node in local_nodes:
                         to_remove[node]=True
                         removed_num+=1
-
+                        print(f'pruning {node}',end=' ')
+            print('')
 
         to_remove[current_node]=False
 
     return removed_num, to_remove
 
-def printgraph(gfaFile,outfile,to_remove):
+
+
+
+def prune_graph(gfaFile,outfile,to_remove):
     with open(outfile, 'w') as out:
         with open(gfaFile, 'r') as gfa:
             for line in gfa:
@@ -101,6 +112,10 @@ if __name__ == "__main__":
     #nodes_to_remove = breadth_first_search_removing_snp(firstnode,graph,nodes_length,verbose=True)
     num_removed, nodes_to_remove = remove_snp(firstnode,graph,nodes_length,snp_len=5,verbose=True)
     print('removed finished')
-    printgraph(args.graph_file,args.outfile,nodes_to_remove)
+    prune_graph(args.graph_file,args.outfile,nodes_to_remove)
 
     print(num_removed)
+
+    #graph, nodes_length, firstnode = parse_graph(args.outfile,verbose=True)
+
+    #graph, nodes_length = compact_graph(graph,nodes_length,firstnode)
